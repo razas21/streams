@@ -4,74 +4,84 @@ exports.handler = async function () {
     const res = await fetch('https://ntvs.cx/matches/kobra', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
-        Accept: 'text/html',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
       },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     html = await res.text();
   } catch (e) {
-    return { statusCode: 502, body: JSON.stringify({ error: e.message }) };
+    return {
+      statusCode: 502,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: e.message, matches: [] })
+    };
   }
+
+  // Debug metrics
+  const hasMatchCard = html.includes('match-card');
+  const hasFootball  = html.includes('data-category="football"');
+  const htmlSnippet  = html.substring(0, 500);
+  const matchCardIdx = html.indexOf('match-card');
+  const snippet2     = matchCardIdx > -1 ? html.substring(matchCardIdx, matchCardIdx + 300) : 'NOT FOUND';
 
   const matches = [];
 
-  // Split into lines and scan sequentially — much more reliable than block regex
-  const lines = html.split('\n');
-  let i = 0;
+  // Global regex pattern to extract each match card container independently from the raw HTML text
+  const cardRegex = /<div\s+[^>]*class="[^"]*match-card[^"]*"[^>]*data-category="football"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g;
 
-  while (i < lines.length) {
-    const line = lines[i];
+  let matchBlock;
+  while ((matchBlock = cardRegex.exec(html)) !== null) {
+    const cardHtml = matchBlock[0];
 
-    // Look for the match-card div (skip skeleton-card)
-    if (line.includes('class="match-card"') && !line.includes('skeleton-card') && line.includes('data-category="football"')) {
-      const catMatch   = /data-category="([^"]+)"/.exec(line);
-      const urlMatch   = /onclick="location\.href='([^']+)'"/.exec(line);
+    // Skip placeholder skeleton blocks
+    if (cardHtml.includes('skeleton-card')) continue;
 
-      if (catMatch && urlMatch) {
-        const category = catMatch[1];
-        const url      = urlMatch[1];
-        const slug     = url.replace('/watch/kobra/', '');
+    // Extract navigation URL and slug
+    const urlMatch = /onclick="location\.href='([^']+)'"/.exec(cardHtml);
+    if (!urlMatch) continue;
+    
+    const url = urlMatch[1];
+    const slug = url.replace('/watch/kobra/', '');
+    const category = "football";
 
-        // Scan next ~15 lines for title, live badge, sources
-        let title = '';
-        let isLive = false;
-        let sources = 1;
+    // Extract Title
+    let title = '';
+    const titleMatch = /<h3[^>]*>([^<]+)<\/h3>/.exec(cardHtml);
+    if (titleMatch) title = titleMatch[1].trim();
 
-        for (let j = i + 1; j < Math.min(i + 15, lines.length); j++) {
-          const l = lines[j];
-          if (l.includes('match-title')) {
-            const t = /<h3[^>]*>([^<]+)<\/h3>/.exec(l);
-            if (t) title = t[1].trim();
-          }
-          if (l.includes('live-badge')) isLive = true;
-          const src = /(\d+) sources/.exec(l);
-          if (src) sources = parseInt(src[1]);
-          // Stop when we hit the closing tag of the card
-          if (l.includes('</div>') && j > i + 3) break;
-        }
+    // Check Live Status
+    const isLive = cardHtml.includes('live-badge');
 
-        if (title) {
-          matches.push({ category, slug, url, title, live: isLive, sources });
-        }
-      }
+    // Extract Count of Stream Sources Available
+    let sources = 1;
+    const srcMatch = /(\d+)\s+sources/.exec(cardHtml);
+    if (srcMatch) sources = parseInt(srcMatch[1], 10);
+
+    if (title) {
+      matches.push({ category, slug, url, title, live: isLive, sources });
     }
-    i++;
   }
-
-  // Sort: live first, then by category
-  matches.sort((a, b) => {
-    if (a.live && !b.live) return -1;
-    if (!a.live && b.live) return 1;
-    return a.category.localeCompare(b.category);
-  });
 
   return {
     statusCode: 200,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Cache-Control': 'public, max-age=60',
     },
-    body: JSON.stringify({ matches }),
+    body: JSON.stringify({
+      matches,
+      debug: {
+        htmlLength: html.length,
+        hasMatchCard,
+        hasFootball,
+        htmlSnippet,
+        firstMatchCardSnippet: snippet2,
+        totalExtracted: matches.length
+      }
+    }),
   };
 };
