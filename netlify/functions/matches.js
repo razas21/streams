@@ -21,27 +21,28 @@ exports.handler = async function () {
     };
   }
 
-  // Debug metrics
+  // Debug variables
   const hasMatchCard = html.includes('match-card');
   const hasFootball  = html.includes('data-category="football"');
   const htmlSnippet  = html.substring(0, 500);
-  const matchCardIdx = html.indexOf('match-card');
-  const snippet2     = matchCardIdx > -1 ? html.substring(matchCardIdx, matchCardIdx + 300) : 'NOT FOUND';
 
   const matches = [];
 
-  // Global regex pattern to extract each match card container independently from the raw HTML text
-  const cardRegex = /<div\s+[^>]*class="[^"]*match-card[^"]*"[^>]*data-category="football"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g;
+  // Segment by each card wrapper independently
+  const chunks = html.split('<div class="match-card"');
 
-  let matchBlock;
-  while ((matchBlock = cardRegex.exec(html)) !== null) {
-    const cardHtml = matchBlock[0];
+  // Skip the first element since it contains metadata before any match card
+  for (let i = 1; i < chunks.length; i++) {
+    const chunk = chunks[i];
 
-    // Skip placeholder skeleton blocks
-    if (cardHtml.includes('skeleton-card')) continue;
+    // Filter to isolate only football category matches
+    if (!chunk.includes('data-category="football"')) continue;
+
+    // Skip skeleton loaders
+    if (chunk.includes('skeleton-card')) continue;
 
     // Extract navigation URL and slug
-    const urlMatch = /onclick="location\.href='([^']+)'"/.exec(cardHtml);
+    const urlMatch = /onclick="location\.href='([^']+)'"/.exec(chunk);
     if (!urlMatch) continue;
     
     const url = urlMatch[1];
@@ -50,15 +51,15 @@ exports.handler = async function () {
 
     // Extract Title
     let title = '';
-    const titleMatch = /<h3[^>]*>([^<]+)<\/h3>/.exec(cardHtml);
+    const titleMatch = /<h3[^>]*>([^<]+)<\/h3>/.exec(chunk);
     if (titleMatch) title = titleMatch[1].trim();
 
     // Check Live Status
-    const isLive = cardHtml.includes('live-badge');
+    const isLive = chunk.includes('live-badge');
 
     // Extract Count of Stream Sources Available
     let sources = 1;
-    const srcMatch = /(\d+)\s+sources/.exec(cardHtml);
+    const srcMatch = /(\d+)\s+sources/.exec(chunk);
     if (srcMatch) sources = parseInt(srcMatch[1], 10);
 
     if (title) {
@@ -79,7 +80,6 @@ exports.handler = async function () {
         hasMatchCard,
         hasFootball,
         htmlSnippet,
-        firstMatchCardSnippet: snippet2,
         totalExtracted: matches.length
       }
     }),
