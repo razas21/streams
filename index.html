@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIFA World Cup 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #08090c;
+    color: #e2e8f0;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    gap: 0;
+  }
+
+  /* Live pill */
+  .live {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 1.5rem;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: #e63946;
+    border-radius: 50%;
+    animation: blink 1.4s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.2; }
+  }
+
+  /* Match title */
+  #matchTitle {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.12em;
+    color: #cbd5e1;
+    margin-bottom: 1.25rem;
+    text-align: center;
+    min-height: 2rem;
+  }
+
+  /* Controls row */
+  .controls {
+    width: min(920px, 100%);
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .url-input {
+    flex: 1;
+    min-width: 0;
+    background: #0f1217;
+    border: 1px solid #1e2330;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    padding: 0 0.85rem;
+    height: 38px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .url-input::placeholder { color: #334155; }
+  .url-input:focus { border-color: #3b4a63; }
+
+  .load-btn {
+    background: #1e2d45;
+    border: 1px solid #2d4a6b;
+    border-radius: 6px;
+    color: #7eb8f7;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0 1.1rem;
+    height: 38px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .load-btn:hover { background: #243552; }
+  .load-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Stream selector */
+  .stream-select-wrap {
+    width: min(920px, 100%);
+    margin-bottom: 0.75rem;
+    display: none;
+  }
+
+  .stream-select-wrap.visible { display: block; }
+
+  .stream-select {
+    width: 100%;
+    background: #0f1217;
+    border: 1px solid #1e2330;
+    border-radius: 6px;
+    color: #94a3b8;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    padding: 0 0.85rem;
+    height: 38px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
+    padding-right: 2.5rem;
+    transition: border-color 0.15s;
+  }
+
+  .stream-select:focus { border-color: #3b4a63; }
+
+  /* Player */
+  .stage {
+    width: min(920px, 100vw);
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #141820;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.8);
+    position: relative;
+    background: #0a0b0e;
+  }
+
+  .stage iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  /* Empty state */
+  .stage-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    color: #1e2535;
+  }
+
+  .stage-empty svg { opacity: 0.4; }
+
+  .stage-empty p {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #1e2535;
+  }
+
+  /* Status / error */
+  .status {
+    font-size: 0.68rem;
+    color: #475569;
+    letter-spacing: 0.06em;
+    margin-top: 0.75rem;
+    min-height: 1rem;
+    text-align: center;
+  }
+
+  .status.error { color: #e63946; }
+
+  @media (max-width: 500px) {
+    .controls { flex-direction: column; }
+    .load-btn { height: 38px; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="live">
+    <span class="live-dot"></span>
+    Live · FIFA World Cup 2026
+  </div>
+
+  <div id="matchTitle"></div>
+
+  <div class="controls">
+    <input
+      class="url-input"
+      id="urlInput"
+      type="text"
+      placeholder="Paste ntvs.cx match URL — e.g. https://ntvs.cx/watch/kobra/spain-vs-uruguay-2502846"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button class="load-btn" id="loadBtn" onclick="loadMatch()">Load</button>
+  </div>
+
+  <div class="stream-select-wrap" id="selectWrap">
+    <select class="stream-select" id="streamSelect" onchange="switchStream(this.value)">
+    </select>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="stage-empty" id="stageEmpty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <path d="M8 21h8M12 17v4"/>
+      </svg>
+      <p>paste a match url above</p>
+    </div>
+    <iframe id="streamPlayer" style="display:none" allowfullscreen
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
+    </iframe>
+  </div>
+
+  <div class="status" id="status"></div>
+
+<script>
+  function slugFromUrl(raw) {
+    raw = raw.trim();
+    // Accept full URL or just slug
+    const m = raw.match(/\/watch\/[^/]+\/([^/?#]+)/);
+    return m ? m[1] : raw;
+  }
+
+  function setStatus(msg, isError) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status' + (isError ? ' error' : '');
+  }
+
+  async function loadMatch() {
+    const raw = document.getElementById('urlInput').value;
+    if (!raw.trim()) return;
+
+    const slug = slugFromUrl(raw);
+    if (!slug) { setStatus('Could not parse URL', true); return; }
+
+    const btn = document.getElementById('loadBtn');
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    setStatus('Fetching streams…');
+
+    try {
+      const res = await fetch(`/.netlify/functions/streams?slug=${encodeURIComponent(slug)}`);
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to load streams');
+      }
+
+      if (!data.streams || data.streams.length === 0) {
+        throw new Error('No streams found for this match');
+      }
+
+      // Update title
+      document.getElementById('matchTitle').textContent = data.title || slug;
+
+      // Build dropdown
+      const select = document.getElementById('streamSelect');
+      select.innerHTML = '';
+      data.streams.forEach((s, i) => {
+        const opt = document.createElement('option');
+        opt.value = s.src;
+        opt.textContent = s.label;
+        select.appendChild(opt);
+      });
+
+      document.getElementById('selectWrap').classList.add('visible');
+
+      // Load first stream
+      switchStream(data.streams[0].src);
+      setStatus(`${data.streams.length} streams loaded`);
+
+    } catch (e) {
+      setStatus(e.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Load';
+    }
+  }
+
+  function switchStream(src) {
+    const player = document.getElementById('streamPlayer');
+    const empty  = document.getElementById('stageEmpty');
+    player.src = src;
+    player.style.display = 'block';
+    empty.style.display  = 'none';
+  }
+
+  // Allow pressing Enter in the input
+  document.getElementById('urlInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') loadMatch();
+  });
+</script>
+
+</body>
+</html>
