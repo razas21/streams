@@ -101,40 +101,19 @@
   .load-btn:hover { background: #243552; }
   .load-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* Stream selector row */
+  /* Stream controls row */
   .stream-row {
     width: min(920px, 100%);
     display: none;
     gap: 0.5rem;
     margin-bottom: 0.75rem;
     align-items: center;
+    justify-content: flex-end;
   }
 
   .stream-row.visible { display: flex; }
 
-  .stream-select {
-    flex: 1;
-    background: #0f1217;
-    border: 1px solid #1e2330;
-    border-radius: 6px;
-    color: #94a3b8;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    padding: 0 0.85rem;
-    height: 38px;
-    outline: none;
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.85rem center;
-    padding-right: 2.5rem;
-    transition: border-color 0.15s;
-  }
-
-  .stream-select:focus { border-color: #3b4a63; }
-
-  /* Next stream button */
+  /* Not working button */
   .next-btn {
     background: transparent;
     border: 1px solid #1e2330;
@@ -144,7 +123,7 @@
     font-size: 0.72rem;
     font-weight: 500;
     padding: 0 0.9rem;
-    height: 38px;
+    height: 34px;
     cursor: pointer;
     white-space: nowrap;
     transition: border-color 0.15s, color 0.15s;
@@ -156,6 +135,87 @@
 
   .next-btn:hover { border-color: #e63946; color: #e63946; }
   .next-btn svg { width: 12px; height: 12px; }
+
+  /* Three-dot button + dropdown wrapper */
+  .dots-wrap {
+    position: relative;
+  }
+
+  .dots-btn {
+    background: transparent;
+    border: 1px solid #1e2330;
+    border-radius: 6px;
+    color: #475569;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+    letter-spacing: 0.05em;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  .dots-btn:hover,
+  .dots-btn.open { border-color: #3b4a63; color: #94a3b8; }
+
+  /* Dropdown */
+  .stream-dropdown {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 0;
+    background: #0f1217;
+    border: 1px solid #1e2330;
+    border-radius: 8px;
+    min-width: 280px;
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    scrollbar-width: thin;
+    scrollbar-color: #1e2330 transparent;
+  }
+
+  .stream-dropdown.open { display: block; }
+
+  .dropdown-header {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #334155;
+    border-bottom: 1px solid #0d1015;
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.72rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+    border-bottom: 1px solid #0d1015;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .dropdown-item:last-child { border-bottom: none; }
+  .dropdown-item:hover { background: #131820; color: #94a3b8; }
+  .dropdown-item.active { color: #e2e8f0; background: #131820; }
+
+  .stream-num {
+    font-size: 0.6rem;
+    color: #334155;
+    min-width: 1.4rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dropdown-item.active .stream-num { color: #e63946; }
 
   /* Player */
   .stage {
@@ -174,12 +234,11 @@
     border: none; display: block;
   }
 
-  /* Empty state */
   .stage-empty {
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 0.75rem; color: #1e2535;
+    gap: 0.75rem;
   }
 
   .stage-empty p {
@@ -231,7 +290,6 @@
 
   .switch-overlay .cancel-btn:hover { color: #e2e8f0; border-color: #475569; }
 
-  /* Status */
   .status {
     font-size: 0.68rem;
     color: #475569;
@@ -267,18 +325,23 @@
   </div>
 
   <div class="stream-row" id="streamRow">
-    <select class="stream-select" id="streamSelect" onchange="switchStream(this.value, true)"></select>
-    <button class="next-btn" onclick="nextStream()" title="Try next stream">
+    <button class="next-btn" onclick="nextStream()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M5 12h14M13 6l6 6-6 6"/>
       </svg>
       <span>Not working?</span>
     </button>
+    <div class="dots-wrap">
+      <button class="dots-btn" id="dotsBtn" onclick="toggleDropdown()" title="Select stream">···</button>
+      <div class="stream-dropdown" id="streamDropdown">
+        <div class="dropdown-header">Select stream</div>
+      </div>
+    </div>
   </div>
 
   <div class="stage" id="stage">
     <div class="stage-empty" id="stageEmpty">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1e2535" stroke-width="1">
         <rect x="2" y="3" width="20" height="14" rx="2"/>
         <path d="M8 21h8M12 17v4"/>
       </svg>
@@ -287,7 +350,6 @@
     <iframe id="streamPlayer" style="display:none" allowfullscreen
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
     </iframe>
-    <!-- Auto-switch overlay -->
     <div class="switch-overlay" id="switchOverlay">
       <p>Stream failed — switching in</p>
       <div class="countdown" id="countdown">3</div>
@@ -300,7 +362,6 @@
 <script>
   let streams = [];
   let currentIdx = 0;
-  let autoSwitchTimer = null;
   let countdownInterval = null;
 
   function slugFromUrl(raw) {
@@ -339,18 +400,9 @@
       currentIdx = 0;
 
       document.getElementById('matchTitle').textContent = data.title || slug;
-
-      const select = document.getElementById('streamSelect');
-      select.innerHTML = '';
-      streams.forEach((s, i) => {
-        const opt = document.createElement('option');
-        opt.value = s.src;
-        opt.textContent = s.label;
-        select.appendChild(opt);
-      });
-
+      buildDropdown();
       document.getElementById('streamRow').classList.add('visible');
-      switchStream(streams[0].src, false);
+      switchStream(0, false);
       setStatus(`${streams.length} streams available`);
 
     } catch (e) {
@@ -361,15 +413,42 @@
     }
   }
 
-  function switchStream(src, manual) {
+  function buildDropdown() {
+    const dropdown = document.getElementById('streamDropdown');
+    // Remove old items (keep header)
+    const header = dropdown.querySelector('.dropdown-header');
+    dropdown.innerHTML = '';
+    dropdown.appendChild(header);
+
+    streams.forEach((s, i) => {
+      const item = document.createElement('div');
+      item.className = 'dropdown-item' + (i === currentIdx ? ' active' : '');
+      item.innerHTML = `<span class="stream-num">${String(i + 1).padStart(2, '0')}</span>${s.label}`;
+      item.onclick = () => {
+        closeDropdown();
+        currentIdx = i;
+        switchStream(i, true);
+      };
+      dropdown.appendChild(item);
+    });
+  }
+
+  function updateDropdownActive() {
+    document.querySelectorAll('.dropdown-item').forEach((el, i) => {
+      el.classList.toggle('active', i === currentIdx);
+    });
+  }
+
+  function switchStream(idx, manual) {
     cancelAutoSwitch();
+    currentIdx = idx;
+    const src = streams[idx].src;
+
     const player = document.getElementById('streamPlayer');
     const empty  = document.getElementById('stageEmpty');
 
-    // Clear src first to force reload
     player.src = '';
 
-    // On load error — trigger auto-switch (only if not last stream)
     player.onerror = () => {
       if (currentIdx < streams.length - 1) {
         startAutoSwitch();
@@ -378,7 +457,6 @@
       }
     };
 
-    // On successful load — clear any error state
     player.onload = () => {
       document.getElementById('switchOverlay').classList.remove('visible');
     };
@@ -386,27 +464,16 @@
     player.src = src;
     player.style.display = 'block';
     empty.style.display = 'none';
+    updateDropdownActive();
 
-    // Sync dropdown
-    const select = document.getElementById('streamSelect');
-    select.value = src;
-
-    // Update currentIdx to match selected
-    const idx = streams.findIndex(s => s.src === src);
-    if (idx !== -1) currentIdx = idx;
-
-    if (manual) {
-      setStatus(`Stream ${currentIdx + 1} of ${streams.length}`);
-    }
+    if (manual) setStatus(`Stream ${currentIdx + 1} of ${streams.length}`);
   }
 
   function nextStream() {
     cancelAutoSwitch();
-    if (streams.length === 0) return;
+    if (!streams.length) return;
     const next = (currentIdx + 1) % streams.length;
-    currentIdx = next;
-    document.getElementById('streamSelect').selectedIndex = next;
-    switchStream(streams[next].src, true);
+    switchStream(next, true);
   }
 
   function startAutoSwitch() {
@@ -414,15 +481,12 @@
       setStatus('All streams failed', true);
       return;
     }
-
     const overlay = document.getElementById('switchOverlay');
     const countdownEl = document.getElementById('countdown');
     overlay.classList.add('visible');
-
     let count = 3;
     countdownEl.textContent = count;
     setStatus('Stream failed — auto-switching…', true);
-
     countdownInterval = setInterval(() => {
       count--;
       countdownEl.textContent = count;
@@ -436,9 +500,27 @@
 
   function cancelAutoSwitch() {
     clearInterval(countdownInterval);
-    clearTimeout(autoSwitchTimer);
     document.getElementById('switchOverlay')?.classList.remove('visible');
   }
+
+  function toggleDropdown() {
+    const dd = document.getElementById('streamDropdown');
+    const btn = document.getElementById('dotsBtn');
+    const isOpen = dd.classList.contains('open');
+    dd.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+  }
+
+  function closeDropdown() {
+    document.getElementById('streamDropdown').classList.remove('open');
+    document.getElementById('dotsBtn').classList.remove('open');
+  }
+
+  // Close dropdown on outside click
+  document.addEventListener('click', e => {
+    const wrap = document.querySelector('.dots-wrap');
+    if (wrap && !wrap.contains(e.target)) closeDropdown();
+  });
 
   document.getElementById('urlInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') loadMatch();
