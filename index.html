@@ -22,7 +22,6 @@
     gap: 0;
   }
 
-  /* Live pill */
   .live {
     display: flex;
     align-items: center;
@@ -36,8 +35,7 @@
   }
 
   .live-dot {
-    width: 6px;
-    height: 6px;
+    width: 6px; height: 6px;
     background: #e63946;
     border-radius: 50%;
     animation: blink 1.4s ease-in-out infinite;
@@ -48,7 +46,6 @@
     50%       { opacity: 0.2; }
   }
 
-  /* Match title */
   #matchTitle {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 1.6rem;
@@ -59,7 +56,6 @@
     min-height: 2rem;
   }
 
-  /* Controls row */
   .controls {
     width: min(920px, 100%);
     display: flex;
@@ -105,17 +101,19 @@
   .load-btn:hover { background: #243552; }
   .load-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* Stream selector */
-  .stream-select-wrap {
+  /* Stream selector row */
+  .stream-row {
     width: min(920px, 100%);
-    margin-bottom: 0.75rem;
     display: none;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    align-items: center;
   }
 
-  .stream-select-wrap.visible { display: block; }
+  .stream-row.visible { display: flex; }
 
   .stream-select {
-    width: 100%;
+    flex: 1;
     background: #0f1217;
     border: 1px solid #1e2330;
     border-radius: 6px;
@@ -136,6 +134,29 @@
 
   .stream-select:focus { border-color: #3b4a63; }
 
+  /* Next stream button */
+  .next-btn {
+    background: transparent;
+    border: 1px solid #1e2330;
+    border-radius: 6px;
+    color: #475569;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 0 0.9rem;
+    height: 38px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .next-btn:hover { border-color: #e63946; color: #e63946; }
+  .next-btn svg { width: 12px; height: 12px; }
+
   /* Player */
   .stage {
     width: min(920px, 100vw);
@@ -149,25 +170,17 @@
   }
 
   .stage iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
+    width: 100%; height: 100%;
+    border: none; display: block;
   }
 
   /* Empty state */
   .stage-empty {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    color: #1e2535;
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0.75rem; color: #1e2535;
   }
-
-  .stage-empty svg { opacity: 0.4; }
 
   .stage-empty p {
     font-size: 0.72rem;
@@ -176,7 +189,49 @@
     color: #1e2535;
   }
 
-  /* Status / error */
+  /* Auto-switch overlay */
+  .switch-overlay {
+    position: absolute; inset: 0;
+    background: rgba(8,9,12,0.85);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    z-index: 10;
+  }
+
+  .switch-overlay.visible { display: flex; }
+
+  .switch-overlay p {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    letter-spacing: 0.06em;
+  }
+
+  .switch-overlay .countdown {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    color: #e63946;
+    line-height: 1;
+  }
+
+  .switch-overlay .cancel-btn {
+    background: transparent;
+    border: 1px solid #1e2330;
+    border-radius: 5px;
+    color: #475569;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    padding: 0.35rem 0.85rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-top: 0.25rem;
+  }
+
+  .switch-overlay .cancel-btn:hover { color: #e2e8f0; border-color: #475569; }
+
+  /* Status */
   .status {
     font-size: 0.68rem;
     color: #475569;
@@ -191,6 +246,7 @@
   @media (max-width: 500px) {
     .controls { flex-direction: column; }
     .load-btn { height: 38px; width: 100%; }
+    .next-btn span { display: none; }
   }
 </style>
 </head>
@@ -204,20 +260,20 @@
   <div id="matchTitle"></div>
 
   <div class="controls">
-    <input
-      class="url-input"
-      id="urlInput"
-      type="text"
+    <input class="url-input" id="urlInput" type="text"
       placeholder="Paste ntvs.cx match URL — e.g. https://ntvs.cx/watch/kobra/spain-vs-uruguay-2502846"
-      autocomplete="off"
-      spellcheck="false"
-    />
+      autocomplete="off" spellcheck="false" />
     <button class="load-btn" id="loadBtn" onclick="loadMatch()">Load</button>
   </div>
 
-  <div class="stream-select-wrap" id="selectWrap">
-    <select class="stream-select" id="streamSelect" onchange="switchStream(this.value)">
-    </select>
+  <div class="stream-row" id="streamRow">
+    <select class="stream-select" id="streamSelect" onchange="switchStream(this.value, true)"></select>
+    <button class="next-btn" onclick="nextStream()" title="Try next stream">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 12h14M13 6l6 6-6 6"/>
+      </svg>
+      <span>Not working?</span>
+    </button>
   </div>
 
   <div class="stage" id="stage">
@@ -231,14 +287,24 @@
     <iframe id="streamPlayer" style="display:none" allowfullscreen
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
     </iframe>
+    <!-- Auto-switch overlay -->
+    <div class="switch-overlay" id="switchOverlay">
+      <p>Stream failed — switching in</p>
+      <div class="countdown" id="countdown">3</div>
+      <button class="cancel-btn" onclick="cancelAutoSwitch()">Cancel</button>
+    </div>
   </div>
 
   <div class="status" id="status"></div>
 
 <script>
+  let streams = [];
+  let currentIdx = 0;
+  let autoSwitchTimer = null;
+  let countdownInterval = null;
+
   function slugFromUrl(raw) {
     raw = raw.trim();
-    // Accept full URL or just slug
     const m = raw.match(/\/watch\/[^/]+\/([^/?#]+)/);
     return m ? m[1] : raw;
   }
@@ -260,37 +326,32 @@
     btn.disabled = true;
     btn.textContent = 'Loading…';
     setStatus('Fetching streams…');
+    cancelAutoSwitch();
 
     try {
       const res = await fetch(`/.netlify/functions/streams?slug=${encodeURIComponent(slug)}`);
       const data = await res.json();
 
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Failed to load streams');
-      }
+      if (!res.ok || data.error) throw new Error(data.error || 'Failed to load streams');
+      if (!data.streams || data.streams.length === 0) throw new Error('No streams found for this match');
 
-      if (!data.streams || data.streams.length === 0) {
-        throw new Error('No streams found for this match');
-      }
+      streams = data.streams;
+      currentIdx = 0;
 
-      // Update title
       document.getElementById('matchTitle').textContent = data.title || slug;
 
-      // Build dropdown
       const select = document.getElementById('streamSelect');
       select.innerHTML = '';
-      data.streams.forEach((s, i) => {
+      streams.forEach((s, i) => {
         const opt = document.createElement('option');
         opt.value = s.src;
         opt.textContent = s.label;
         select.appendChild(opt);
       });
 
-      document.getElementById('selectWrap').classList.add('visible');
-
-      // Load first stream
-      switchStream(data.streams[0].src);
-      setStatus(`${data.streams.length} streams loaded`);
+      document.getElementById('streamRow').classList.add('visible');
+      switchStream(streams[0].src, false);
+      setStatus(`${streams.length} streams available`);
 
     } catch (e) {
       setStatus(e.message, true);
@@ -300,15 +361,85 @@
     }
   }
 
-  function switchStream(src) {
+  function switchStream(src, manual) {
+    cancelAutoSwitch();
     const player = document.getElementById('streamPlayer');
     const empty  = document.getElementById('stageEmpty');
+
+    // Clear src first to force reload
+    player.src = '';
+
+    // On load error — trigger auto-switch (only if not last stream)
+    player.onerror = () => {
+      if (currentIdx < streams.length - 1) {
+        startAutoSwitch();
+      } else {
+        setStatus('All streams failed — try a different match URL', true);
+      }
+    };
+
+    // On successful load — clear any error state
+    player.onload = () => {
+      document.getElementById('switchOverlay').classList.remove('visible');
+    };
+
     player.src = src;
     player.style.display = 'block';
-    empty.style.display  = 'none';
+    empty.style.display = 'none';
+
+    // Sync dropdown
+    const select = document.getElementById('streamSelect');
+    select.value = src;
+
+    // Update currentIdx to match selected
+    const idx = streams.findIndex(s => s.src === src);
+    if (idx !== -1) currentIdx = idx;
+
+    if (manual) {
+      setStatus(`Stream ${currentIdx + 1} of ${streams.length}`);
+    }
   }
 
-  // Allow pressing Enter in the input
+  function nextStream() {
+    cancelAutoSwitch();
+    if (streams.length === 0) return;
+    const next = (currentIdx + 1) % streams.length;
+    currentIdx = next;
+    document.getElementById('streamSelect').selectedIndex = next;
+    switchStream(streams[next].src, true);
+  }
+
+  function startAutoSwitch() {
+    if (currentIdx >= streams.length - 1) {
+      setStatus('All streams failed', true);
+      return;
+    }
+
+    const overlay = document.getElementById('switchOverlay');
+    const countdownEl = document.getElementById('countdown');
+    overlay.classList.add('visible');
+
+    let count = 3;
+    countdownEl.textContent = count;
+    setStatus('Stream failed — auto-switching…', true);
+
+    countdownInterval = setInterval(() => {
+      count--;
+      countdownEl.textContent = count;
+      if (count <= 0) {
+        clearInterval(countdownInterval);
+        overlay.classList.remove('visible');
+        nextStream();
+      }
+    }, 1000);
+  }
+
+  function cancelAutoSwitch() {
+    clearInterval(countdownInterval);
+    clearTimeout(autoSwitchTimer);
+    document.getElementById('switchOverlay')?.classList.remove('visible');
+  }
+
   document.getElementById('urlInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') loadMatch();
   });
