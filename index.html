@@ -162,6 +162,63 @@
   .dots-btn:hover,
   .dots-btn.open { border-color: #3b4a63; color: #94a3b8; }
 
+  /* Fullscreen button */
+  .fs-btn {
+    background: transparent;
+    border: 1px solid #1e2330;
+    border-radius: 6px;
+    color: #475569;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .fs-btn:hover { border-color: #3b4a63; color: #94a3b8; }
+  .fs-btn svg { width: 14px; height: 14px; }
+
+  .stage:fullscreen,
+  .stage:-webkit-full-screen {
+    width: 100vw; height: 100vh;
+    aspect-ratio: unset; border-radius: 0; border: none; max-width: unset;
+  }
+  /* Exit button — only visible in fullscreen */
+  .fs-exit-btn {
+    display: none;
+  }
+  .stage:fullscreen .fs-exit-btn,
+  .stage:-webkit-full-screen .fs-exit-btn {
+    display: flex;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 20;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(8,9,12,0.75);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    color: #94a3b8;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    backdrop-filter: blur(4px);
+  }
+  .stage:fullscreen .fs-exit-btn:hover,
+  .stage:-webkit-full-screen .fs-exit-btn:hover {
+    background: rgba(30,35,48,0.9);
+    color: #e2e8f0;
+  }
+
+  .stage:fullscreen iframe,
+  .stage:-webkit-full-screen iframe { width: 100%; height: 100%; }
+
   /* Dropdown */
   .stream-dropdown {
     position: absolute;
@@ -331,6 +388,9 @@
       </svg>
       <span>Not working?</span>
     </button>
+    <button class="fs-btn" onclick="toggleFullscreen()" title="Fullscreen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+    </button>
     <div class="dots-wrap">
       <button class="dots-btn" id="dotsBtn" onclick="toggleDropdown()" title="Select stream">···</button>
       <div class="stream-dropdown" id="streamDropdown">
@@ -350,6 +410,11 @@
     <iframe id="streamPlayer" style="display:none" allowfullscreen
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
     </iframe>
+    <!-- Fullscreen exit button -->
+    <button class="fs-exit-btn" id="fsExitBtn" onclick="toggleFullscreen()" title="Exit fullscreen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+      Exit
+    </button>
     <div class="switch-overlay" id="switchOverlay">
       <p>Stream failed — switching in</p>
       <div class="countdown" id="countdown">3</div>
@@ -517,6 +582,15 @@
   }
 
   // Close dropdown on outside click
+  function toggleFullscreen() {
+    const stage = document.getElementById('stage');
+    if (!document.fullscreenElement) {
+      stage.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
   document.addEventListener('click', e => {
     const wrap = document.querySelector('.dots-wrap');
     if (wrap && !wrap.contains(e.target)) closeDropdown();
