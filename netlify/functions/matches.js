@@ -13,37 +13,49 @@ exports.handler = async function () {
     return { statusCode: 502, body: JSON.stringify({ error: e.message }) };
   }
 
-  // Extract all match cards
-  const cardRe = /<div class="match-card"[^>]*data-category="([^"]+)"[^>]*onclick="location\.href='([^']+)'"[\s\S]*?<h3 class="match-title">([\s\S]*?)<\/h3>[\s\S]*?(<span class="live-badge">[\s\S]*?)?<\/div>\s*<\/div>/g;
-
-  // Simpler approach: extract onclick URLs + titles + categories line by line
   const matches = [];
-  const onclickRe = /data-category="([^"]+)"[^>]*onclick="location\.href='([^']+)'"/g;
-  const titleRe = /<h3 class="match-title">([\s\S]*?)<\/h3>/g;
-  const liveRe = /live-badge/g;
 
-  // Pull all cards as blocks first
-  const blockRe = /<div class="match-card"([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/g;
-  let block;
-  while ((block = blockRe.exec(html)) !== null) {
-    const inner = block[0];
+  // Split into lines and scan sequentially — much more reliable than block regex
+  const lines = html.split('\n');
+  let i = 0;
 
-    const catMatch = /data-category="([^"]+)"/.exec(inner);
-    const urlMatch = /onclick="location\.href='([^']+)'"/.exec(inner);
-    const titleMatch = /<h3 class="match-title">([\s\S]*?)<\/h3>/.exec(inner);
-    const isLive = /live-badge/.test(inner);
-    const sourcesMatch = /([\d]+) sources/.exec(inner);
+  while (i < lines.length) {
+    const line = lines[i];
 
-    if (!urlMatch || !titleMatch) continue;
+    // Look for the match-card div (skip skeleton-card)
+    if (line.includes('class="match-card"') && !line.includes('skeleton-card') && line.includes('data-category="football"')) {
+      const catMatch   = /data-category="([^"]+)"/.exec(line);
+      const urlMatch   = /onclick="location\.href='([^']+)'"/.exec(line);
 
-    matches.push({
-      category: catMatch ? catMatch[1] : 'other',
-      slug: urlMatch[1].replace('/watch/kobra/', ''),
-      url: urlMatch[1],
-      title: titleMatch[1].replace(/<[^>]+>/g, '').trim(),
-      live: isLive,
-      sources: sourcesMatch ? parseInt(sourcesMatch[1]) : 1,
-    });
+      if (catMatch && urlMatch) {
+        const category = catMatch[1];
+        const url      = urlMatch[1];
+        const slug     = url.replace('/watch/kobra/', '');
+
+        // Scan next ~15 lines for title, live badge, sources
+        let title = '';
+        let isLive = false;
+        let sources = 1;
+
+        for (let j = i + 1; j < Math.min(i + 15, lines.length); j++) {
+          const l = lines[j];
+          if (l.includes('match-title')) {
+            const t = /<h3[^>]*>([^<]+)<\/h3>/.exec(l);
+            if (t) title = t[1].trim();
+          }
+          if (l.includes('live-badge')) isLive = true;
+          const src = /(\d+) sources/.exec(l);
+          if (src) sources = parseInt(src[1]);
+          // Stop when we hit the closing tag of the card
+          if (l.includes('</div>') && j > i + 3) break;
+        }
+
+        if (title) {
+          matches.push({ category, slug, url, title, live: isLive, sources });
+        }
+      }
+    }
+    i++;
   }
 
   // Sort: live first, then by category
@@ -58,7 +70,7 @@ exports.handler = async function () {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Cache-Control': 'public, max-age=60', // cache 1 min
+      'Cache-Control': 'public, max-age=60',
     },
     body: JSON.stringify({ matches }),
   };
