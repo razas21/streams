@@ -47,7 +47,7 @@
 
   #matchTitle {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.6rem;
+    font-size: 2.8rem;
     letter-spacing: 0.12em;
     color: #cbd5e1;
     margin-bottom: 1.25rem;
@@ -211,73 +211,52 @@
     width: min(920px, 100%);
     display: none;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
     align-items: center;
     justify-content: flex-end;
   }
 
   .stream-row.visible { display: flex; }
 
-  .next-btn {
+  /* UPDATED BUTTON STYLES */
+  .next-btn, .dots-btn, .fs-btn {
     background: transparent;
-    border: 1px solid #1e2330;
+    border: 1px solid #e63946;
+    color: #e63946;
     border-radius: 6px;
-    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .next-btn:hover, .dots-btn:hover, .fs-btn:hover,
+  .dots-btn.open {
+    background: #e63946;
+    color: #ffffff;
+  }
+
+  .next-btn {
     font-family: 'Inter', sans-serif;
     font-size: 0.72rem;
     font-weight: 500;
     padding: 0 0.9rem;
     height: 34px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: border-color 0.15s, color 0.15s;
-    display: flex;
-    align-items: center;
     gap: 0.4rem;
-    flex-shrink: 0;
   }
 
-  .next-btn:hover { border-color: #e63946; color: #e63946; }
   .next-btn svg { width: 12px; height: 12px; }
 
-  .dots-wrap { position: relative; }
-
-  .dots-btn {
-    background: transparent;
-    border: 1px solid #1e2330;
-    border-radius: 6px;
-    color: #475569;
+  .dots-btn, .fs-btn {
     width: 34px; height: 34px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: border-color 0.15s, color 0.15s;
-    letter-spacing: 0.05em;
-    font-size: 0.9rem;
-    line-height: 1;
   }
 
-  .dots-btn:hover,
-  .dots-btn.open { border-color: #3b4a63; color: #94a3b8; }
-
-  .fs-btn {
-    background: transparent;
-    border: 1px solid #1e2330;
-    border-radius: 6px;
-    color: #475569;
-    width: 34px; height: 34px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: border-color 0.15s, color 0.15s;
-  }
-
-  .fs-btn:hover { border-color: #3b4a63; color: #94a3b8; }
   .fs-btn svg { width: 14px; height: 14px; }
+  .dots-btn { letter-spacing: 0.05em; font-size: 0.9rem; line-height: 1; }
+
+  .dots-wrap { position: relative; }
 
   /* Stream dropdown */
   .stream-dropdown {
@@ -465,8 +444,7 @@
 
   <div id="matchTitle">Select a match to watch</div>
 
-  <!-- Match picker -->
-  <div class="picker-wrap" id="pickerWrap" style="display:none;">
+  <div class="picker-wrap" id="pickerWrap">
     <div class="picker-row">
       <button class="picker-btn" id="pickerBtn" onclick="toggleMatchDropdown()">
         <span class="picker-btn-text" id="pickerBtnText">Loading matches…</span>
@@ -487,7 +465,30 @@
     </div>
   </div>
 
-  <!-- Stream controls -->
+  <div class="stage" id="stage">
+    <div class="stage-empty" id="stageEmpty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1e2535" stroke-width="1">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <path d="M8 21h8M12 17v4"/>
+      </svg>
+      <p>select a match above</p>
+    </div>
+    <iframe id="streamPlayer" style="display:none" allowfullscreen
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
+    </iframe>
+    <button class="fs-exit-btn" onclick="toggleFullscreen()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+      </svg>
+      Exit
+    </button>
+    <div class="switch-overlay" id="switchOverlay">
+      <p>Stream failed — switching in</p>
+      <div class="countdown" id="countdown">3</div>
+      <button class="cancel-btn" onclick="cancelAutoSwitch()">Cancel</button>
+    </div>
+  </div>
+
   <div class="stream-row" id="streamRow">
     <button class="next-btn" onclick="nextStream()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -508,31 +509,6 @@
     </div>
   </div>
 
-  <!-- Player -->
-  <div class="stage" id="stage">
-    <div class="stage-empty" id="stageEmpty">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1e2535" stroke-width="1">
-        <rect x="2" y="3" width="20" height="14" rx="2"/>
-        <path d="M8 21h8M12 17v4"/>
-      </svg>
-      <p id="stageEmptyText">Loading…</p>
-    </div>
-    <iframe id="streamPlayer" style="display:none" allowfullscreen
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen">
-    </iframe>
-    <button class="fs-exit-btn" onclick="toggleFullscreen()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
-      </svg>
-      Exit
-    </button>
-    <div class="switch-overlay" id="switchOverlay">
-      <p>Stream failed — switching in</p>
-      <div class="countdown" id="countdown">3</div>
-      <button class="cancel-btn" onclick="cancelAutoSwitch()">Cancel</button>
-    </div>
-  </div>
-
   <div class="status" id="status"></div>
 
 <script>
@@ -542,24 +518,13 @@
   let countdownInterval = null;
   let selectedMatch = null;
 
-  // ── Status ──
   function setStatus(msg, isError) {
     const el = document.getElementById('status');
     el.textContent = msg;
     el.className = 'status' + (isError ? ' error' : '');
   }
 
-  // ── HARDCODED MATCH (temporary, until the matches list scraper is wired back up) ──
-  // Just drop a match page URL here, e.g. 'http://ntvs.cx/watch/kobra/spain-vs-austria-2503636'
-  // streams.js will still scrape this page for its available stream sources.
-  const HARDCODED_MATCH_URL = 'http://ntvs.cx/watch/kobra/spain-vs-austria-2503636';
-
-  // ── Fetch match list ──
   async function fetchMatches() {
-    // Bypassed for now — loading the hardcoded stream directly instead.
-    loadHardcodedStream();
-    return;
-
     const btn = document.getElementById('refreshBtn');
     const pickerText = document.getElementById('pickerBtnText');
     btn.classList.add('spinning');
@@ -581,43 +546,6 @@
     }
   }
 
-  // ── Load the hardcoded match, skipping the matches-list fetch but still using streams.js ──
-  async function loadHardcodedStream() {
-    // Pull the slug out of the full match URL, e.g. 'spain-vs-austria-2503636'
-    const slug = HARDCODED_MATCH_URL.split('/watch/kobra/')[1]?.replace(/\/$/, '');
-    if (!slug) {
-      setStatus('Could not parse slug from HARDCODED_MATCH_URL', true);
-      return;
-    }
-
-    document.getElementById('pickerBtnText').textContent = 'Loading…';
-    document.getElementById('matchTitle').textContent = 'Loading…';
-    setStatus('Fetching streams…');
-
-    try {
-      const res = await fetch(`/.netlify/functions/streams?slug=${encodeURIComponent(slug)}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      if (!data.streams || !data.streams.length) throw new Error('No streams found');
-
-      const title = data.title || slug;
-      document.getElementById('pickerBtnText').textContent = title;
-      document.getElementById('matchTitle').textContent = title;
-
-      streams = data.streams;
-      currentIdx = 0;
-      buildStreamDropdown();
-      document.getElementById('streamRow').classList.add('visible');
-      switchStream(0, false);
-      setStatus(`${streams.length} streams available`);
-    } catch (e) {
-      setStatus(e.message, true);
-      const stageEmptyText = document.getElementById('stageEmptyText');
-      if (stageEmptyText) stageEmptyText.textContent = 'Loading failed';
-    }
-  }
-
-  // ── Build match dropdown ──
   function buildMatchDropdown() {
     const dd = document.getElementById('matchDropdown');
     const header = dd.querySelector('.match-dropdown-header');
@@ -632,7 +560,6 @@
       return;
     }
 
-    // Group: live first, then by category
     const live = matches.filter(m => m.live);
     const upcoming = matches.filter(m => !m.live);
 
@@ -666,7 +593,6 @@
     return item;
   }
 
-  // ── Select a match ──
   async function selectMatch(m) {
     selectedMatch = m;
     closeMatchDropdown();
@@ -689,12 +615,9 @@
       setStatus(`${streams.length} streams available`);
     } catch (e) {
       setStatus(e.message, true);
-      const stageEmptyText = document.getElementById('stageEmptyText');
-      if (stageEmptyText) stageEmptyText.textContent = 'Loading failed';
     }
   }
 
-  // ── Match dropdown toggle ──
   function toggleMatchDropdown() {
     const dd = document.getElementById('matchDropdown');
     const btn = document.getElementById('pickerBtn');
@@ -707,7 +630,6 @@
     document.getElementById('pickerBtn').classList.remove('open');
   }
 
-  // ── Stream dropdown ──
   function buildStreamDropdown() {
     const dd = document.getElementById('streamDropdown');
     const header = dd.querySelector('.dropdown-header');
@@ -741,7 +663,6 @@
     document.getElementById('dotsBtn').classList.remove('open');
   }
 
-  // ── Stream switching ──
   function switchStream(idx, manual) {
     cancelAutoSwitch();
     currentIdx = idx;
@@ -796,21 +717,18 @@
     document.getElementById('switchOverlay')?.classList.remove('visible');
   }
 
-  // ── Fullscreen ──
   function toggleFullscreen() {
     const stage = document.getElementById('stage');
     if (!document.fullscreenElement) stage.requestFullscreen().catch(() => {});
     else document.exitFullscreen();
   }
 
-  // ── Close dropdowns on outside click ──
   document.addEventListener('click', e => {
     if (!document.getElementById('pickerWrap').contains(e.target)) closeMatchDropdown();
     const dotsWrap = document.querySelector('.dots-wrap');
     if (dotsWrap && !dotsWrap.contains(e.target)) closeStreamDropdown();
   });
 
-  // ── Init ──
   fetchMatches();
 </script>
 
